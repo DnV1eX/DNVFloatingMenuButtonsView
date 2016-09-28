@@ -68,8 +68,9 @@
 
 typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
 {
-    LGPlusButtonDescriptionsPositionLeft  = 0,
-    LGPlusButtonDescriptionsPositionRight = 1
+    LGPlusButtonDescriptionsPositionLeft   = 0,
+    LGPlusButtonDescriptionsPositionRight  = 1,
+    LGPlusButtonDescriptionsPositionBottom = 2
 };
 
 @property (assign, nonatomic, getter=isObserversAdded) BOOL observersAdded;
@@ -922,11 +923,25 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
 {
     _position = position;
 
-    if (_position == LGPlusButtonsViewPositionBottomRight || _position == LGPlusButtonsViewPositionTopRight)
+    [self updateDescriptionsPosition];
+}
+
+- (void)setButtonsAppearingType:(LGPlusButtonsAppearingType)buttonsAppearingType
+{
+    _buttonsAppearingType = buttonsAppearingType;
+    
+    [self updateDescriptionsPosition];
+}
+
+- (void)updateDescriptionsPosition
+{
+    if (_buttonsAppearingType == LGPlusButtonsAppearingTypeHorizontal)
+        _descriptionsPosition = LGPlusButtonDescriptionsPositionBottom;
+    else if (_position == LGPlusButtonsViewPositionBottomRight || _position == LGPlusButtonsViewPositionTopRight)
         _descriptionsPosition = LGPlusButtonDescriptionsPositionLeft;
     else
         _descriptionsPosition = LGPlusButtonDescriptionsPositionRight;
-
+    
     [self setNeedsLayout];
 }
 
@@ -987,8 +1002,16 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
         CGSize buttonSize = [button sizeForOrientation:orientation];
         UIEdgeInsets buttonInsets = [button insetsForOrientation:orientation];
 
-        buttonsContentViewSize.width = MAX(buttonsContentViewSize.width, buttonSize.width + buttonInsets.left + buttonInsets.right);
-        buttonsContentViewSize.height += [button sizeForOrientation:orientation].height + buttonInsets.top + buttonInsets.bottom;
+        switch (_buttonsAppearingType) {
+            case LGPlusButtonsAppearingTypeHorizontal:
+                buttonsContentViewSize.width += [button sizeForOrientation:orientation].width + buttonInsets.left + buttonInsets.right;
+                buttonsContentViewSize.height = MAX(buttonsContentViewSize.height, buttonSize.height + buttonInsets.top + buttonInsets.bottom);
+                break;
+            case LGPlusButtonsAppearingTypeVertical:
+                buttonsContentViewSize.width = MAX(buttonsContentViewSize.width, buttonSize.width + buttonInsets.left + buttonInsets.right);
+                buttonsContentViewSize.height += [button sizeForOrientation:orientation].height + buttonInsets.top + buttonInsets.bottom;
+                break;
+        }
     }
 
     // -----
@@ -1027,16 +1050,26 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
 
     CGRect descriptionsContentViewFrame = CGRectZero;
 
-    if (_descriptionsPosition == LGPlusButtonDescriptionsPositionLeft)
-        descriptionsContentViewFrame = CGRectMake(0.f,
-                                                  buttonsContentViewFrame.origin.y,
-                                                  contentViewFrame.size.width-buttonsContentViewFrame.size.width,
-                                                  buttonsContentViewFrame.size.height);
-    else
-        descriptionsContentViewFrame = CGRectMake(buttonsContentViewFrame.origin.x+buttonsContentViewFrame.size.width,
-                                                  buttonsContentViewFrame.origin.y,
-                                                  contentViewFrame.size.width-(buttonsContentViewFrame.origin.x+buttonsContentViewFrame.size.width),
-                                                  buttonsContentViewFrame.size.height);
+    switch (_descriptionsPosition) {
+        case LGPlusButtonDescriptionsPositionLeft:
+            descriptionsContentViewFrame = CGRectMake(0.f,
+                                                      buttonsContentViewFrame.origin.y,
+                                                      contentViewFrame.size.width-buttonsContentViewFrame.size.width,
+                                                      buttonsContentViewFrame.size.height);
+            break;
+        case LGPlusButtonDescriptionsPositionRight:
+            descriptionsContentViewFrame = CGRectMake(buttonsContentViewFrame.origin.x+buttonsContentViewFrame.size.width,
+                                                      buttonsContentViewFrame.origin.y,
+                                                      contentViewFrame.size.width-(buttonsContentViewFrame.origin.x+buttonsContentViewFrame.size.width),
+                                                      buttonsContentViewFrame.size.height);
+            break;
+        case LGPlusButtonDescriptionsPositionBottom:
+            descriptionsContentViewFrame = CGRectMake(0.f,
+                                                      buttonsContentViewFrame.origin.y+buttonsContentViewFrame.size.height,
+                                                      buttonsContentViewFrame.size.width,
+                                                      contentViewFrame.size.height-(buttonsContentViewFrame.origin.y+buttonsContentViewFrame.size.height));
+            break;
+    }
 
     if ([UIScreen mainScreen].scale == 1.f)
         descriptionsContentViewFrame = CGRectIntegral(descriptionsContentViewFrame);
@@ -1083,26 +1116,72 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
         {
             CGRect previousWrapperFrame = [_buttonWrapperViewsArray1[i-1] frame];
 
-            if (_position == LGPlusButtonsViewPositionBottomRight)
-                buttonFrame = CGRectMake(buttonsContentViewSize.width-buttonInsets.right-buttonSize.width,
-                                         previousWrapperFrame.origin.y-buttonInsets.top-buttonInsets.bottom-buttonSize.height,
-                                         buttonSize.width,
-                                         buttonSize.height);
-            else if (_position == LGPlusButtonsViewPositionBottomLeft)
-                buttonFrame = CGRectMake(buttonInsets.left,
-                                         previousWrapperFrame.origin.y-buttonInsets.top-buttonInsets.bottom-buttonSize.height,
-                                         buttonSize.width,
-                                         buttonSize.height);
-            else if (_position == LGPlusButtonsViewPositionTopRight)
-                buttonFrame = CGRectMake(buttonsContentViewSize.width-buttonInsets.right-buttonSize.width,
-                                         previousWrapperFrame.origin.y+previousWrapperFrame.size.height+buttonInsets.bottom+buttonInsets.top,
-                                         buttonSize.width,
-                                         buttonSize.height);
-            else if (_position == LGPlusButtonsViewPositionTopLeft)
-                buttonFrame = CGRectMake(buttonInsets.left,
-                                         previousWrapperFrame.origin.y+previousWrapperFrame.size.height+buttonInsets.bottom+buttonInsets.top,
-                                         buttonSize.width,
-                                         buttonSize.height);
+            switch (_position) {
+                case LGPlusButtonsViewPositionBottomRight:
+                    switch (_buttonsAppearingType) {
+                        case LGPlusButtonsAppearingTypeHorizontal:
+                            buttonFrame = CGRectMake(previousWrapperFrame.origin.x-buttonInsets.left-buttonInsets.right-buttonSize.width,
+                                                     buttonsContentViewSize.height-buttonInsets.bottom-buttonSize.height,
+                                                     buttonSize.width,
+                                                     buttonSize.height);
+                            break;
+                        case LGPlusButtonsAppearingTypeVertical:
+                            buttonFrame = CGRectMake(buttonsContentViewSize.width-buttonInsets.right-buttonSize.width,
+                                                     previousWrapperFrame.origin.y-buttonInsets.top-buttonInsets.bottom-buttonSize.height,
+                                                     buttonSize.width,
+                                                     buttonSize.height);
+                            break;
+                    }
+                    break;
+                case LGPlusButtonsViewPositionBottomLeft:
+                    switch (_buttonsAppearingType) {
+                        case LGPlusButtonsAppearingTypeHorizontal:
+                            buttonFrame = CGRectMake(previousWrapperFrame.origin.x+previousWrapperFrame.size.width+buttonInsets.left+buttonInsets.right+buttonSize.width,
+                                                     buttonsContentViewSize.height-buttonInsets.bottom-buttonSize.height,
+                                                     buttonSize.width,
+                                                     buttonSize.height);
+                            break;
+                        case LGPlusButtonsAppearingTypeVertical:
+                            buttonFrame = CGRectMake(buttonInsets.left,
+                                                     previousWrapperFrame.origin.y-buttonInsets.top-buttonInsets.bottom-buttonSize.height,
+                                                     buttonSize.width,
+                                                     buttonSize.height);
+                            break;
+                    }
+                    break;
+                case LGPlusButtonsViewPositionTopRight:
+                    switch (_buttonsAppearingType) {
+                        case LGPlusButtonsAppearingTypeHorizontal:
+                            buttonFrame = CGRectMake(previousWrapperFrame.origin.x-buttonInsets.left-buttonInsets.right-buttonSize.width,
+                                                     buttonInsets.top,
+                                                     buttonSize.width,
+                                                     buttonSize.height);
+                            break;
+                        case LGPlusButtonsAppearingTypeVertical:
+                            buttonFrame = CGRectMake(buttonsContentViewSize.width-buttonInsets.right-buttonSize.width,
+                                                     previousWrapperFrame.origin.y+previousWrapperFrame.size.height+buttonInsets.bottom+buttonInsets.top,
+                                                     buttonSize.width,
+                                                     buttonSize.height);
+                            break;
+                    }
+                    break;
+                case LGPlusButtonsViewPositionTopLeft:
+                    switch (_buttonsAppearingType) {
+                        case LGPlusButtonsAppearingTypeHorizontal:
+                            buttonFrame = CGRectMake(previousWrapperFrame.origin.x+previousWrapperFrame.size.width+buttonInsets.left+buttonInsets.right+buttonSize.width,
+                                                     buttonInsets.top,
+                                                     buttonSize.width,
+                                                     buttonSize.height);
+                            break;
+                        case LGPlusButtonsAppearingTypeVertical:
+                            buttonFrame = CGRectMake(buttonInsets.left,
+                                                     previousWrapperFrame.origin.y+previousWrapperFrame.size.height+buttonInsets.bottom+buttonInsets.top,
+                                                     buttonSize.width,
+                                                     buttonSize.height);
+                            break;
+                    }
+                    break;
+            }
         }
 
         buttonFrame.origin.x += buttonOffset.x;
@@ -1132,7 +1211,17 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
         UIView *descriptionWrapperView = _descriptionWrapperViewsArray[i];
         LGPlusButtonDescription *description = _descriptionsArray[i];
 
-        description.textAlignment = (_descriptionsPosition == LGPlusButtonDescriptionsPositionLeft ? NSTextAlignmentRight : NSTextAlignmentLeft);
+        switch (_descriptionsPosition) {
+            case LGPlusButtonDescriptionsPositionLeft:
+                description.textAlignment = NSTextAlignmentRight;
+                break;
+            case LGPlusButtonDescriptionsPositionRight:
+                description.textAlignment = NSTextAlignmentLeft;
+                break;
+            case LGPlusButtonDescriptionsPositionBottom:
+                description.textAlignment = NSTextAlignmentCenter;
+                break;
+        }
         [description updateParametersForOrientation:orientation];
 
         UIEdgeInsets descriptionInsets = [description insetsForOrientation:orientation];
@@ -1150,29 +1239,29 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
             CGSize descriptionSize = [description sizeForOrientation:orientation];
 
             descriptionWrapperView.transform = CGAffineTransformIdentity;
-            CGRect descriptionWrapperViewFrame = buttonWrapperView1.frame;
-
+            CGRect descriptionWrapperViewFrame = [buttonWrapperView1.superview convertRect:buttonWrapperView1.frame toView:descriptionWrapperView.superview];
+            descriptionWrapperView.frame = descriptionWrapperViewFrame;
             CGRect descriptionFrame = CGRectZero;
 
-            if (_descriptionsPosition == LGPlusButtonDescriptionsPositionLeft)
-            {
-                descriptionWrapperViewFrame.origin.x = descriptionsContentViewFrame.size.width+buttonInsets.left;
-                descriptionWrapperView.frame = descriptionWrapperViewFrame;
-
-                descriptionFrame = CGRectMake(-buttonInsets.left-descriptionInsets.right-descriptionSize.width,
-                                              descriptionWrapperView.frame.size.height/2.f-descriptionSize.height/2.f,
-                                              descriptionSize.width,
-                                              descriptionSize.height);
-            }
-            else
-            {
-                descriptionWrapperViewFrame.origin.x = -buttonSize.width-buttonInsets.right;
-                descriptionWrapperView.frame = descriptionWrapperViewFrame;
-
-                descriptionFrame = CGRectMake(descriptionWrapperView.frame.size.width+buttonInsets.right+descriptionInsets.left,
-                                              descriptionWrapperView.frame.size.height/2.f-descriptionSize.height/2.f,
-                                              descriptionSize.width,
-                                              descriptionSize.height);
+            switch (_descriptionsPosition) {
+                case LGPlusButtonDescriptionsPositionLeft:
+                    descriptionFrame = CGRectMake(-buttonInsets.left-descriptionInsets.right-descriptionSize.width,
+                                                  descriptionWrapperView.frame.size.height/2.f-descriptionSize.height/2.f,
+                                                  descriptionSize.width,
+                                                  descriptionSize.height);
+                    break;
+                case LGPlusButtonDescriptionsPositionRight:
+                    descriptionFrame = CGRectMake(descriptionWrapperView.frame.size.width+buttonInsets.right+descriptionInsets.left,
+                                                  descriptionWrapperView.frame.size.height/2.f-descriptionSize.height/2.f,
+                                                  descriptionSize.width,
+                                                  descriptionSize.height);
+                    break;
+                case LGPlusButtonDescriptionsPositionBottom:
+                    descriptionFrame = CGRectMake(descriptionWrapperView.frame.size.width/2.f-descriptionSize.width/2.f,
+                                                  descriptionWrapperView.frame.size.height+buttonInsets.bottom+descriptionInsets.top,
+                                                  descriptionSize.width,
+                                                  descriptionSize.height);
+                    break;
             }
 
             descriptionFrame.origin.x += descriptionOffset.x;
@@ -1850,7 +1939,7 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
     else if (type == LGPlusButtonAnimationTypeRotate)
     {
         CGAffineTransform transform = CGAffineTransformIdentity;
-        transform = CGAffineTransformConcat(transform, CGAffineTransformMakeRotation(kLGPlusButtonsViewDegreesToRadians(45)));
+        transform = CGAffineTransformConcat(transform, CGAffineTransformMakeRotation(kLGPlusButtonsViewDegreesToRadians(90)));
 
         if (animated)
         {

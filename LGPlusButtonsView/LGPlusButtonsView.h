@@ -88,6 +88,12 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonsAppearingAnimationType)
     LGPlusButtonsAppearingAnimationTypeCrossDissolveAndPop             = 4
 };
 
+typedef NS_ENUM(NSUInteger, LGPlusButtonsAppearingType)
+{
+    LGPlusButtonsAppearingTypeVertical   = 0,
+    LGPlusButtonsAppearingTypeHorizontal = 1
+};
+
 typedef NS_ENUM(NSUInteger, LGPlusButtonAnimationType)
 {
     LGPlusButtonAnimationTypeNone          = 0,
@@ -109,6 +115,7 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonAnimationType)
 @property (assign, nonatomic) CGFloat                             scrollSensitivity;
 @property (assign, nonatomic) LGPlusButtonsAppearingAnimationType appearingAnimationType;
 @property (assign, nonatomic) LGPlusButtonsAppearingAnimationType buttonsAppearingAnimationType;
+@property (assign, nonatomic) LGPlusButtonsAppearingType          buttonsAppearingType;
 @property (assign, nonatomic) LGPlusButtonAnimationType           plusButtonAnimationType;
 @property (strong, nonatomic) UIColor                             *coverColor;
 
