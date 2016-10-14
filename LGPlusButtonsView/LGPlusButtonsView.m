@@ -2061,7 +2061,7 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
         if ([object isEqual:self.superview])
             [self updatePosition];
 
-        if (!self.isShowHideOnScroll ||
+        if ((!self.isShowHideOnScroll && !self.isHideButtonsOnScroll) ||
             (_observedScrollView && ![object isEqual:_observedScrollView]) ||
             (!_observedScrollView && ![object isEqual:self.superview]))
             return;
@@ -2090,12 +2090,14 @@ typedef NS_ENUM(NSUInteger, LGPlusButtonDescriptionsPosition)
             {
                 if (self.offsetY > offsetY)
                     [self showAnimated:YES completionHandler:nil];
-                else
+                else if (self.showHideOnScroll)
                     [self hideAnimated:YES completionHandler:^(void)
                      {
                          if (self.isHideButtonsOnScroll)
                              [self hideButtonsAnimated:NO completionHandler:nil];
                      }];
+                else
+                    [self hideButtonsAnimated:YES completionHandler:nil];
             }
         }
 

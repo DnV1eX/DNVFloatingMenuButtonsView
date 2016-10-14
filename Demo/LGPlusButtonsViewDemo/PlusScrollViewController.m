@@ -68,7 +68,7 @@
 
     _plusButtonsViewMain.observedScrollView = self.scrollView;
 //    _plusButtonsViewMain.coverColor = [UIColor colorWithWhite:1.f alpha:0.7];
-//    _plusButtonsViewMain.showHideOnScroll = NO;
+    _plusButtonsViewMain.showHideOnScroll = NO;
     _plusButtonsViewMain.hideButtonsOnScroll = YES;
     _plusButtonsViewMain.position = LGPlusButtonsViewPositionBottomRight;
     _plusButtonsViewMain.plusButtonAnimationType = LGPlusButtonAnimationTypeRotate;
